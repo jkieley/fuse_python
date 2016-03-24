@@ -5,6 +5,7 @@ from __future__ import with_statement
 import os
 import sys
 import errno
+import urllib
 
 from fuse import FUSE, FuseOSError, Operations
 
@@ -21,6 +22,13 @@ class Passthrough(Operations):
             partial = partial[1:]
         path = os.path.join(self.root, partial)
         return path
+
+    def restClientUser(self,path,num):
+        if(num==0):
+            res=urllib.urlopen("http://10.144.152.128:8080/lock?userId=1&resourcePath="+path+"&lockType=WRITE").read()
+        else:
+            res=urllib.urlopen("http://10.144.152.128:8080/unlock?userId=1&resourcePath="+path+"&lockType=WRITE").read()
+        return res
 
     # Filesystem methods
     # ==================
@@ -105,16 +113,19 @@ class Passthrough(Operations):
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
-	print("before some read is happening: "+path)
+        stat=self.restClientUser(path,0)
+        print("before some read is happening: "+path)
         os.lseek(fh, offset, os.SEEK_SET)
-	print("after some read is happening: "+path)
+        print("after some read is happening: "+path)
+        stat=self.restClientUser(path,1)
+        #print self.restClientUser()
         return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
-	print("some write is happening, path: "+path)
+        print("some write is happening, path: "+path)
         os.lseek(fh, offset, os.SEEK_SET)
-	write_return = os.write(fh, buf)
-	print("after the write is performed: "+path)
+        write_return = os.write(fh, buf)
+        print("after the write is performed: "+path)
         return write_return
 
     def truncate(self, path, length, fh=None):
