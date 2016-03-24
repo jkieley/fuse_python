@@ -109,6 +109,7 @@ class Passthrough(Operations):
         return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
+	print("some write is happening")
         os.lseek(fh, offset, os.SEEK_SET)
         return os.write(fh, buf)
 
