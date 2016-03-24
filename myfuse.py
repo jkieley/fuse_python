@@ -25,9 +25,9 @@ class Passthrough(Operations):
 
     def restClientUser(self,path,num):
         if(num==0):
-            res=urllib.urlopen("http://10.144.152.128:8080/lock?userId=1&resourcePath="+path+"&lockType=WRITE").read()
+            res=urllib.urlopen("http://10.144.152.128:8080/lock?userId=1&resourcePath=abcd&lockType=WRITE").read()
         else:
-            res=urllib.urlopen("http://10.144.152.128:8080/unlock?userId=1&resourcePath="+path+"&lockType=WRITE").read()
+            res=urllib.urlopen("http://10.144.152.128:8080/unlock?userId=1&resourcePath=abcd&lockType=WRITE&md5=1234").read()
         return res
 
     # Filesystem methods
@@ -114,10 +114,12 @@ class Passthrough(Operations):
 
     def read(self, path, length, offset, fh):
         stat=self.restClientUser(path,0)
+	print(stat)
         print("before some read is happening: "+path)
         os.lseek(fh, offset, os.SEEK_SET)
         print("after some read is happening: "+path)
         stat=self.restClientUser(path,1)
+	print(stat)
         #print self.restClientUser()
         return os.read(fh, length)
 
