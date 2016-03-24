@@ -105,13 +105,17 @@ class Passthrough(Operations):
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
+	print("before some read is happening: "+path)
         os.lseek(fh, offset, os.SEEK_SET)
+	print("after some read is happening: "+path)
         return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
-	print("some write is happening")
+	print("some write is happening, path: "+path)
         os.lseek(fh, offset, os.SEEK_SET)
-        return os.write(fh, buf)
+	write_return = os.write(fh, buf)
+	print("after the write is performed: "+path)
+        return write_return
 
     def truncate(self, path, length, fh=None):
         full_path = self._full_path(path)
