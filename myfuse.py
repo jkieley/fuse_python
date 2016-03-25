@@ -31,7 +31,7 @@ class Passthrough(Operations):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
 
-    def restClientUser(self,path,num):
+    def restClientUser(self,path,num,md5):
         if(num==0):
             str="http://10.144.154.68:8080/lock?userId=1&resourcePath=abcd&lockType=WRITE"
             print str
@@ -40,7 +40,7 @@ class Passthrough(Operations):
             #print(md5('asdf.txt')) 
 
         else:
-            res=urllib.urlopen("http://10.144.154.68:8080/unlock?userId=1&resourcePath=abcd&lockType=WRITE&md5=1234").read()
+            res=urllib.urlopen("http://10.144.154.68:8080/unlock?userId=1&resourcePath=abcd&lockType=WRITE&md5="+md5).read()
             #print(md5('asdf.txt'))
 
         return res
@@ -132,22 +132,26 @@ class Passthrough(Operations):
 
     def read(self, path, length, offset, fh):
         print("making rest call")
-        stat=self.restClientUser(path,0)
+        stat=self.restClientUser(path,0,100)
         md5=self.findMD5(stat)
         print md5
         if(md5 is not False):
+            /*check for md5 match*/
             print("before some read is happening: "+path)
             os.lseek(fh, offset, os.SEEK_SET)
             print("after some read is happening: "+path)
             print(md5)
-            print self.restClientUser(path,1)
+            print self.restClientUser(path,1,md5)
             return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
         print("some write is happening, path: "+path)
+        stat=self.restClientUser(path,0,100)
         os.lseek(fh, offset, os.SEEK_SET)
         write_return = os.write(fh, buf)
         print("after the write is performed: "+path)
+        /*calculate new md5*/
+        /*release the lock with new md5*/
         return write_return
 
     def truncate(self, path, length, fh=None):
