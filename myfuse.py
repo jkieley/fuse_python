@@ -6,6 +6,7 @@ import os
 import sys
 import errno
 import urllib
+import hashlib
 
 from fuse import FUSE, FuseOSError, Operations
 
@@ -23,12 +24,29 @@ class Passthrough(Operations):
         path = os.path.join(self.root, partial)
         return path
 
+    def md5(fname):
+        hash_md5 = hashlib.md5()
+        with open(fname, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()
+
     def restClientUser(self,path,num):
         if(num==0):
-            res=urllib.urlopen("http://10.144.152.128:8080/lock?userId=1&resourcePath=abcd&lockType=WRITE").read()
+            str="http://10.144.154.68:8080/lock?userId=1&resourcePath=abcd&lockType=WRITE"
+            print str
+            res=urllib.urlopen(str).read()
+            print res;
+            #print(md5('asdf.txt')) 
+
         else:
-            res=urllib.urlopen("http://10.144.152.128:8080/unlock?userId=1&resourcePath=abcd&lockType=WRITE&md5=1234").read()
+            res=urllib.urlopen("http://10.144.154.68:8080/unlock?userId=1&resourcePath=abcd&lockType=WRITE&md5=1234").read()
+            #print(md5('asdf.txt'))
+
         return res
+
+    def findMD5(self,string):
+        return string.replace('{','').replace('}','').split(',')[3].split(':')[1].replace('"','').replace(' ','')
 
     # Filesystem methods
     # ==================
@@ -113,15 +131,17 @@ class Passthrough(Operations):
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
+        print("making rest call")
         stat=self.restClientUser(path,0)
-	print(stat)
-        print("before some read is happening: "+path)
-        os.lseek(fh, offset, os.SEEK_SET)
-        print("after some read is happening: "+path)
-        stat=self.restClientUser(path,1)
-	print(stat)
-        #print self.restClientUser()
-        return os.read(fh, length)
+        md5=self.findMD5(stat)
+        print md5
+        if(md5 is not False):
+            print("before some read is happening: "+path)
+            os.lseek(fh, offset, os.SEEK_SET)
+            print("after some read is happening: "+path)
+            print(md5)
+            print self.restClientUser(path,1)
+            return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
         print("some write is happening, path: "+path)
