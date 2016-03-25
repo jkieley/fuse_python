@@ -140,10 +140,10 @@ class Passthrough(Operations):
 	    # do md5FromFile match passed MD5
             # if not wait and check
 	    # else proceed
-	    #prefix = '/home/parallels/projects'
-	    #md5FromFile = self.md5(prefix+path)
-	    # print('md5FromFile: '+md5FromFile)
-            print("before some read is happening: "+path)
+	    prefix = '/home/parallels/projects/dir_x'
+	    md5FromFile = self.md5(prefix+path)
+	    print('md5FromFile: '+md5FromFile)
+            print("before some r ead is happening: "+path)
             os.lseek(fh, offset, os.SEEK_SET)
             print("after some read is happening: "+path)
             print(md5)
