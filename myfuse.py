@@ -24,7 +24,7 @@ class Passthrough(Operations):
         path = os.path.join(self.root, partial)
         return path
 
-    def md5(fname):
+    def md5(self,fname):
         hash_md5 = hashlib.md5()
         with open(fname, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
@@ -33,14 +33,14 @@ class Passthrough(Operations):
 
     def restClientUser(self,path,num,md5):
         if(num==0):
-            str="http://10.144.154.68:8080/lock?userId=1&resourcePath=abcd&lockType=WRITE"
+            str="http://10.144.154.68:8080/lock?userId=1&resourcePath=abcde&lockType=WRITE"
             print str
             res=urllib.urlopen(str).read()
             print res;
             #print(md5('asdf.txt')) 
 
         else:
-            res=urllib.urlopen("http://10.144.154.68:8080/unlock?userId=1&resourcePath=abcd&lockType=WRITE&md5="+md5).read()
+            res=urllib.urlopen("http://10.144.154.68:8080/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5="+md5).read()
             #print(md5('asdf.txt'))
 
         return res
@@ -134,9 +134,15 @@ class Passthrough(Operations):
         print("making rest call")
         stat=self.restClientUser(path,0,100)
         md5=self.findMD5(stat)
-        print md5
+        print("md5: "+md5)
         if(md5 is not False):
-            /*check for md5 match*/
+            # get md5 from file
+	    # do md5FromFile match passed MD5
+            # if not wait and check
+	    # else proceed
+	    #prefix = '/home/parallels/projects'
+	    #md5FromFile = self.md5(prefix+path)
+	    # print('md5FromFile: '+md5FromFile)
             print("before some read is happening: "+path)
             os.lseek(fh, offset, os.SEEK_SET)
             print("after some read is happening: "+path)
@@ -150,8 +156,9 @@ class Passthrough(Operations):
         os.lseek(fh, offset, os.SEEK_SET)
         write_return = os.write(fh, buf)
         print("after the write is performed: "+path)
-        /*calculate new md5*/
-        /*release the lock with new md5*/
+        stat=self.restClientUser(path,1,'md5string')
+        # /*calculate new md5*/
+        # /*release the lock with new md5*/
         return write_return
 
     def truncate(self, path, length, fh=None):
