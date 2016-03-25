@@ -8,6 +8,7 @@ import errno
 import urllib
 import hashlib
 
+from time import sleep
 from fuse import FUSE, FuseOSError, Operations
 
 
@@ -136,12 +137,12 @@ class Passthrough(Operations):
         md5=self.findMD5(stat)
         print("md5: "+md5)
         if(md5 is not False):
-            # get md5 from file
-	    # do md5FromFile match passed MD5
-            # if not wait and check
-	    # else proceed
 	    prefix = '/home/parallels/projects/dir_x'
 	    md5FromFile = self.md5(prefix+path)
+	    while(md5 != md5FromFile and md5 != 'N/A'):
+	 	sleep(0.2)	
+		md5FromFile = self.md5(prefix+path)
+	        print('waiting: '+md5FromFile)
 	    print('md5FromFile: '+md5FromFile)
             print("before some r ead is happening: "+path)
             os.lseek(fh, offset, os.SEEK_SET)
