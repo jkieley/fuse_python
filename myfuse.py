@@ -15,6 +15,8 @@ from fuse import FUSE, FuseOSError, Operations
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
+        self.host = "10.143.18.234"
+        self.port = "8080"
 
     # Helpers
     # =======
@@ -34,7 +36,7 @@ class Passthrough(Operations):
 
     def restClientUser(self, path, num, md5):
         if (num == 0):
-            str = "http://10.144.154.68:8080/lock?userId=1&resourcePath=abcde&lockType=WRITE"
+            str = "http://"+self.host+":"+self.port+"/lock?userId=1&resourcePath=abcde&lockType=WRITE"
             print str
             res = urllib.urlopen(str).read()
             print res;
@@ -42,7 +44,7 @@ class Passthrough(Operations):
 
         else:
             res = urllib.urlopen(
-                "http://10.144.154.68:8080/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
+                "http://"+self.host+":"+self.port+"/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
             # print(md5('asdf.txt'))
 
         return res
@@ -162,6 +164,7 @@ class Passthrough(Operations):
         print("after the write is performed: " + path)
         prefix = '/home/parallels/projects/dir_x'
         md5FromFile = self.md5(prefix + path)
+        sleep(10.0)
         stat = self.restClientUser(path, 1, md5FromFile)
         # /*calculate new md5*/
         # /*release the lock with new md5*/
