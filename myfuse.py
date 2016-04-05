@@ -25,29 +25,30 @@ class Passthrough(Operations):
         path = os.path.join(self.root, partial)
         return path
 
-    def md5(self,fname):
+    def md5(self, fname):
         hash_md5 = hashlib.md5()
         with open(fname, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
 
-    def restClientUser(self,path,num,md5):
-        if(num==0):
-            str="http://10.144.154.68:8080/lock?userId=1&resourcePath=abcde&lockType=WRITE"
+    def restClientUser(self, path, num, md5):
+        if (num == 0):
+            str = "http://10.144.154.68:8080/lock?userId=1&resourcePath=abcde&lockType=WRITE"
             print str
-            res=urllib.urlopen(str).read()
+            res = urllib.urlopen(str).read()
             print res;
-            #print(md5('asdf.txt')) 
+            # print(md5('asdf.txt'))
 
         else:
-            res=urllib.urlopen("http://10.144.154.68:8080/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5="+md5).read()
-            #print(md5('asdf.txt'))
+            res = urllib.urlopen(
+                "http://10.144.154.68:8080/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
+            # print(md5('asdf.txt'))
 
         return res
 
-    def findMD5(self,string):
-        return string.replace('{','').replace('}','').split(',')[3].split(':')[1].replace('"','').replace(' ','')
+    def findMD5(self, string):
+        return string.replace('{', '').replace('}', '').split(',')[3].split(':')[1].replace('"', '').replace(' ', '')
 
     # Filesystem methods
     # ==================
@@ -69,7 +70,8 @@ class Passthrough(Operations):
         full_path = self._full_path(path)
         st = os.lstat(full_path)
         return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
-                     'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size', 'st_uid'))
+                                                        'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size',
+                                                        'st_uid'))
 
     def readdir(self, path, fh):
         full_path = self._full_path(path)
@@ -102,8 +104,9 @@ class Passthrough(Operations):
         full_path = self._full_path(path)
         stv = os.statvfs(full_path)
         return dict((key, getattr(stv, key)) for key in ('f_bavail', 'f_bfree',
-            'f_blocks', 'f_bsize', 'f_favail', 'f_ffree', 'f_files', 'f_flag',
-            'f_frsize', 'f_namemax'))
+                                                         'f_blocks', 'f_bsize', 'f_favail', 'f_ffree', 'f_files',
+                                                         'f_flag',
+                                                         'f_frsize', 'f_namemax'))
 
     def unlink(self, path):
         return os.unlink(self._full_path(path))
@@ -133,31 +136,33 @@ class Passthrough(Operations):
 
     def read(self, path, length, offset, fh):
         print("making rest call")
-        stat=self.restClientUser(path,0,100)
-        md5=self.findMD5(stat)
-        print("md5: "+md5)
-        if(md5 is not False):
-	    prefix = '/home/parallels/projects/dir_x'
-	    md5FromFile = self.md5(prefix+path)
-	    while(md5 != md5FromFile and md5 != 'N/A'):
-	 	sleep(0.2)	
-		md5FromFile = self.md5(prefix+path)
-	        print('waiting: '+md5FromFile)
-	    print('md5FromFile: '+md5FromFile)
-            print("before some r ead is happening: "+path)
+        stat = self.restClientUser(path, 0, 100)
+        md5 = self.findMD5(stat)
+        print("md5: " + md5)
+        if (md5 is not False):
+            prefix = '/home/parallels/projects/dir_x'
+            md5FromFile = self.md5(prefix + path)
+            while (md5 != md5FromFile and md5 != 'N/A'):
+                sleep(0.2)
+                md5FromFile = self.md5(prefix + path)
+                print('waiting: ' + md5FromFile)
+            print('md5FromFile: ' + md5FromFile)
+            print("before some r ead is happening: " + path)
             os.lseek(fh, offset, os.SEEK_SET)
-            print("after some read is happening: "+path)
+            print("after some read is happening: " + path)
             print(md5)
-            print self.restClientUser(path,1,md5)
+            print self.restClientUser(path, 1, md5)
             return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
-        print("some write is happening, path: "+path)
-        stat=self.restClientUser(path,0,100)
+        print("some write is happening, path: " + path)
+        stat = self.restClientUser(path, 0, 100)
         os.lseek(fh, offset, os.SEEK_SET)
         write_return = os.write(fh, buf)
-        print("after the write is performed: "+path)
-        stat=self.restClientUser(path,1,'md5string')
+        print("after the write is performed: " + path)
+        prefix = '/home/parallels/projects/dir_x'
+        md5FromFile = self.md5(prefix + path)
+        stat = self.restClientUser(path, 1, md5FromFile)
         # /*calculate new md5*/
         # /*release the lock with new md5*/
         return write_return
@@ -179,6 +184,7 @@ class Passthrough(Operations):
 
 def main(mountpoint, root):
     FUSE(Passthrough(root), mountpoint, nothreads=True, foreground=True)
+
 
 if __name__ == '__main__':
     main(sys.argv[2], sys.argv[1])
