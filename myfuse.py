@@ -15,7 +15,7 @@ from fuse import FUSE, FuseOSError, Operations
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
-        self.host = "10.143.18.234"
+        self.host = "192.168.0.37"
         self.port = "8080"
 
     # Helpers
@@ -154,6 +154,11 @@ class Passthrough(Operations):
             print("after some read is happening: " + path)
             print(md5)
             print self.restClientUser(path, 1, md5)
+
+            with open(prefix + path, "rb") as f:
+                f.seek(offset,os.SEEK_SET)
+                return f.read(length)
+
             return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
@@ -164,7 +169,7 @@ class Passthrough(Operations):
         print("after the write is performed: " + path)
         prefix = '/home/parallels/projects/dir_x'
         md5FromFile = self.md5(prefix + path)
-        sleep(10.0)
+        
         stat = self.restClientUser(path, 1, md5FromFile)
         # /*calculate new md5*/
         # /*release the lock with new md5*/
