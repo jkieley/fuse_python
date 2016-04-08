@@ -150,7 +150,6 @@ class Passthrough(Operations):
                 print('waiting: ' + md5FromFile)
             print('md5FromFile: ' + md5FromFile)
             print("before some r ead is happening: " + path)
-            os.lseek(fh, offset, os.SEEK_SET)
             print("after some read is happening: " + path)
             print(md5)
             print self.restClientUser(path, 1, md5)
@@ -158,8 +157,6 @@ class Passthrough(Operations):
             with open(prefix + path, "rb") as f:
                 f.seek(offset,os.SEEK_SET)
                 return f.read(length)
-
-            return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
         print("some write is happening, path: " + path)
