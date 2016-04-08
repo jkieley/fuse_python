@@ -11,5 +11,6 @@
         </value>
       </option>
     </inspection_tool>
+    <inspection_tool class="TypeScriptCheckImport" enabled="true" level="ERROR" enabled_by_default="false" />
   </profile>
 </component>
