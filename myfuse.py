@@ -15,8 +15,9 @@ from fuse import FUSE, FuseOSError, Operations
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
-        self.host = "192.168.0.37"
+        self.host = "10.143.18.234"
         self.port = "8080"
+        self.enable_remote_locking = False
 
     # Helpers
     # =======
@@ -35,18 +36,25 @@ class Passthrough(Operations):
         return hash_md5.hexdigest()
 
     def restClientUser(self, path, num, md5):
-        if (num == 0):
-            str = "http://"+self.host+":"+self.port+"/lock?userId=1&resourcePath=abcde&lockType=WRITE"
-            print str
-            res = urllib.urlopen(str).read()
-            print res;
-            # print(md5('asdf.txt'))
+        res = ""
+        if(self.enable_remote_locking == True):
+            if (num == 0):
+                res = self.perform_lock()
+            else:
+                res = self.perform_unlock(md5)
 
-        else:
-            res = urllib.urlopen(
-                "http://"+self.host+":"+self.port+"/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
-            # print(md5('asdf.txt'))
+        return res
 
+    def perform_unlock(self, md5):
+        res = urllib.urlopen("http://" + self.host + ":" + self.port + "/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
+        return res
+
+    def perform_lock(self):
+        str = "http://" + self.host + ":" + self.port + "/lock?userId=1&resourcePath=abcde&lockType=WRITE"
+        print str
+        res = urllib.urlopen(str).read()
+        print res;
+        # print(md5('asdf.txt'))
         return res
 
     def findMD5(self, string):
