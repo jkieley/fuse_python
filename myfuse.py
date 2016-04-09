@@ -161,10 +161,8 @@ class Passthrough(Operations):
             print("after some read is happening: " + path)
             print(md5)
             print self.restClientUser(path, 1, md5)
-
-            with open(prefix + path, "rb") as f:
-                f.seek(offset,os.SEEK_SET)
-                return f.read(length)
+            os.lseek(fh, offset, os.SEEK_SET)
+            return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
         print("some write is happening, path: " + path)
