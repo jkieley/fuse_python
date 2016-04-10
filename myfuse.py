@@ -15,9 +15,9 @@ from fuse import FUSE, FuseOSError, Operations
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
-        self.host = "10.143.18.234"
+        self.host = "10.211.55.7"
         self.port = "8080"
-        self.enable_remote_locking = False
+        self.enable_remote_locking = True
 
     # Helpers
     # =======
