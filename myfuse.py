@@ -18,6 +18,7 @@ class Passthrough(Operations):
         self.host = "10.211.55.7"
         self.port = "8080"
         self.enable_remote_locking = True
+        self.prefix = '/home/parallels/projects/fuse_python/dir_x'
 
     # Helpers
     # =======
@@ -30,7 +31,7 @@ class Passthrough(Operations):
 
     def md5(self, fname):
         hash_md5 = hashlib.md5()
-        with open(fname, "rb") as f:
+        with open(self.prefix + fname, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
@@ -150,11 +151,10 @@ class Passthrough(Operations):
         md5 = self.findMD5(stat)
         print("md5: " + md5)
         if (md5 is not False):
-            prefix = '/home/parallels/projects/fuse_python/dir_x'
-            md5FromFile = self.md5(prefix + path)
+            md5FromFile = self.md5(path)
             while (md5 != md5FromFile and md5 != 'N/A'):
                 sleep(0.2)
-                md5FromFile = self.md5(prefix + path)
+                md5FromFile = self.md5(path)
                 print('waiting: ' + md5FromFile)
             print('md5FromFile: ' + md5FromFile)
             print("before some r ead is happening: " + path)
@@ -170,8 +170,7 @@ class Passthrough(Operations):
         os.lseek(fh, offset, os.SEEK_SET)
         write_return = os.write(fh, buf)
         print("after the write is performed: " + path)
-        prefix = '/home/parallels/projects/dir_x'
-        md5FromFile = self.md5(prefix + path)
+        md5FromFile = self.md5(path)
         
         stat = self.restClientUser(path, 1, md5FromFile)
         # /*calculate new md5*/
