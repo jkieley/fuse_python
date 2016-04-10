@@ -150,7 +150,7 @@ class Passthrough(Operations):
         md5 = self.findMD5(stat)
         print("md5: " + md5)
         if (md5 is not False):
-            prefix = '/home/parallels/projects/dir_x'
+            prefix = '/home/parallels/projects/fuse_python/dir_x'
             md5FromFile = self.md5(prefix + path)
             while (md5 != md5FromFile and md5 != 'N/A'):
                 sleep(0.2)
