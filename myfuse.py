@@ -3,17 +3,35 @@
 from __future__ import with_statement
 
 import os
+import logging
 import sys
 import errno
 import urllib
 import hashlib
+import inotify.adapters
 
 from time import sleep
 from fuse import FUSE, FuseOSError, Operations
 
+_DEFAULT_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+_LOGGER = logging.getLogger(__name__)
+
+def _configure_logging():
+    _LOGGER.setLevel(logging.DEBUG)
+
+    ch = logging.StreamHandler()
+
+    formatter = logging.Formatter(_DEFAULT_LOG_FORMAT)
+    ch.setFormatter(formatter)
+
+    _LOGGER.addHandler(ch)
+
 
 class Passthrough(Operations):
     def __init__(self, root):
+        _configure_logging()
+        self.i = inotify.adapters.Inotify()
         self.root = root
         self.host = "10.211.55.7"
         self.port = "8080"
@@ -146,9 +164,24 @@ class Passthrough(Operations):
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
+        full_path = self._full_path(path)
+
         print("making rest call")
         stat = self.restClientUser(path, 0, 100)
         md5 = self.findMD5(stat)
+        self.i.add_watch(full_path)
+
+        try:
+            for event in self.i.event_gen():
+                if event is not None:
+                    (header, type_names, watch_path, filename) = event
+                    _LOGGER.info("WD=(%d) MASK=(%d) COOKIE=(%d) LEN=(%d) MASK->NAMES=%s "
+                                 "WATCH-PATH=[%s] FILENAME=[%s]",
+                                 header.wd, header.mask, header.cookie, header.len, type_names,
+                                 watch_path, filename)
+        finally:
+            self.i.remove_watch(full_path)
+
         print("md5: " + md5)
         if (md5 is not False):
             md5FromFile = self.md5(path)
