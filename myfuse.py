@@ -10,12 +10,12 @@ import hashlib
 
 from time import sleep
 from fuse import FUSE, FuseOSError, Operations
-
+BLOCKSIZE=512
 
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
-        self.host = "192.168.0.37"
+        self.host = "127.0.0.1"
         self.port = "8080"
 
     # Helpers
@@ -33,6 +33,20 @@ class Passthrough(Operations):
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
+
+
+    def last_block_md5(self,fname):
+    	hasher = hashlib.md5()
+        with open(fname, 'rb') as afile:
+            buf = afile.read(BLOCKSIZE)
+            buf1=afile.read(BLOCKSIZE)
+            while True:
+                buf1=buf
+                buf = afile.read(BLOCKSIZE)
+                if(len(buf) ==0):
+        	        break;
+        hasher.update(buf1)
+        return (hasher.hexdigest())       
 
     def restClientUser(self, path, num, md5):
         if (num == 0):
@@ -143,10 +157,10 @@ class Passthrough(Operations):
         print("md5: " + md5)
         if (md5 is not False):
             prefix = '/home/parallels/projects/dir_x'
-            md5FromFile = self.md5(prefix + path)
+            md5FromFile = self.last_block_md5(prefix + path)
             while (md5 != md5FromFile and md5 != 'N/A'):
                 sleep(0.2)
-                md5FromFile = self.md5(prefix + path)
+                md5FromFile = self.last_block_md5(prefix + path)
                 print('waiting: ' + md5FromFile)
             print('md5FromFile: ' + md5FromFile)
             print("before some r ead is happening: " + path)
@@ -168,7 +182,7 @@ class Passthrough(Operations):
         write_return = os.write(fh, buf)
         print("after the write is performed: " + path)
         prefix = '/home/parallels/projects/dir_x'
-        md5FromFile = self.md5(prefix + path)
+        md5FromFile = self.last_block_md5(prefix + path)
         
         stat = self.restClientUser(path, 1, md5FromFile)
         # /*calculate new md5*/
