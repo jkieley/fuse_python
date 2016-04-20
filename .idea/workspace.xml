@@ -12,10 +12,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6bebe0d9-fb66-4dd4-b78d-a3d754e37511" name="Default" comment="update project files and remove uneeded files">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/myfuse.py" afterPath="$PROJECT_DIR$/myfuse.py" />
-    </list>
-    <list id="306bca27-f857-4891-9211-ba7e36915084" name="intelij config files" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/myfuse.py" afterPath="$PROJECT_DIR$/myfuse.py" />
     </list>
     <ignored path="projects.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -75,6 +73,7 @@
     </leaf>
   </component>
   <component name="Git.Settings">
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
@@ -171,7 +170,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="settings.editor.selected.configurable" value="reference.settingsdialog.IDE.editor.colors.TypeScript" />
+    <property name="settings.editor.selected.configurable" value="vcs.Git" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="last_opened_file_path" value="$USER_HOME$/Downloads/inotify-0.2.4" />
     <property name="WebServerToolWindowFactoryState" value="false" />
@@ -441,7 +440,7 @@
     <task active="true" id="Default" summary="Default task">
       <changelist id="6bebe0d9-fb66-4dd4-b78d-a3d754e37511" name="Default" comment="" />
       <changelist id="" name="intelij config files" comment="" />
-      <changelist id="306bca27-f857-4891-9211-ba7e36915084" name="intelij config files" comment="" />
+      <changelist id="" name="intelij config files" comment="" />
       <created>1459867703605</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
@@ -503,7 +502,14 @@
       <option name="project" value="LOCAL" />
       <updated>1461194395725</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="intelij config files">
+      <created>1461194418050</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1461194418050</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="ToolWindowManager">
