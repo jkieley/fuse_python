@@ -14,11 +14,7 @@
     <list default="true" id="6bebe0d9-fb66-4dd4-b78d-a3d754e37511" name="Default" comment="update project files and remove uneeded files">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/myfuse.py" afterPath="$PROJECT_DIR$/myfuse.py" />
     </list>
-    <list id="ea4aa862-9802-40dd-ad59-e51ee2f3eb47" name="intelij config files" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/runConfigurations/fusermount.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/runConfigurations/myfuse.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/fusermount.sh" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/projects.iml" afterPath="$PROJECT_DIR$/.idea/projects.iml" />
+    <list id="306bca27-f857-4891-9211-ba7e36915084" name="intelij config files" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="projects.iws" />
@@ -444,7 +440,8 @@
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="6bebe0d9-fb66-4dd4-b78d-a3d754e37511" name="Default" comment="" />
-      <changelist id="ea4aa862-9802-40dd-ad59-e51ee2f3eb47" name="intelij config files" comment="" />
+      <changelist id="" name="intelij config files" comment="" />
+      <changelist id="306bca27-f857-4891-9211-ba7e36915084" name="intelij config files" comment="" />
       <created>1459867703605</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
@@ -499,7 +496,14 @@
       <option name="project" value="LOCAL" />
       <updated>1460480252242</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="intelij config files">
+      <created>1461194395725</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1461194395725</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -511,7 +515,7 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.7035573" sideWeight="0.5026296" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.38510638" sideWeight="0.42073628" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3855165" sideWeight="0.42073628" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.7035573" sideWeight="0.4973704" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -546,7 +550,8 @@
     <MESSAGE value="add a flag to be able to turn off remote server calls" />
     <MESSAGE value="add inotify to read, next up use the watch descriptor when an event is generated" />
     <MESSAGE value="remove inotify" />
-    <option name="LAST_COMMIT_MESSAGE" value="remove inotify" />
+    <MESSAGE value="intelij config files" />
+    <option name="LAST_COMMIT_MESSAGE" value="intelij config files" />
     <option name="PRESELECT_EXISTING_CHANGELIST" value="false" />
   </component>
   <component name="XDebuggerManager">
