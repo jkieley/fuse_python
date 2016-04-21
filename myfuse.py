@@ -10,13 +10,15 @@ import hashlib
 
 from time import sleep
 from fuse import FUSE, FuseOSError, Operations
-BLOCKSIZE=1024
-final_md5=[]
+
+BLOCKSIZE = 4096
+path_md5_map = {}
+
 
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
-        self.host = "127.0.0.1"
+        self.host = "10.211.55.7"
         self.port = "8080"
 
     # Helpers
@@ -35,32 +37,34 @@ class Passthrough(Operations):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
 
-
-    def block_level_md5(self,fname):
-    	hasher = hashlib.md5()
+    def block_level_md5(self, fname):
+        final_md5 = []
+        hasher = hashlib.md5()
         with open(fname, 'rb') as afile:
             buf = afile.read(BLOCKSIZE)
-            buf1=afile.read(BLOCKSIZE)
+            buf1 = afile.read(BLOCKSIZE)
             while True:
-                buf1=buf
+                buf1 = buf
                 buf = afile.read(BLOCKSIZE)
                 hasher.update(buf1)
-                md5=hasher.hexdigest()
+                md5 = hasher.hexdigest()
                 final_md5.append(md5)
-                if(len(buf) ==0):
-        	        break;
-    
+                if (len(buf) == 0):
+                    break
+        afile.close()
+        path_md5_map.update({fname: final_md5})
+
     def restClientUser(self, path, num, md5):
         if (num == 0):
-            str = "http://"+self.host+":"+self.port+"/lock?userId=1&resourcePath=abcde&lockType=WRITE"
-            print str
+            str = "http://" + self.host + ":" + self.port + "/lock?userId=1&resourcePath=abcde&lockType=WRITE"
+            print(str)
             res = urllib.urlopen(str).read()
-            print res;
+            print(res)
             # print(md5('asdf.txt'))
 
         else:
             res = urllib.urlopen(
-                "http://"+self.host+":"+self.port+"/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
+                "http://" + self.host + ":" + self.port + "/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
             # print(md5('asdf.txt'))
 
         return res
@@ -146,6 +150,9 @@ class Passthrough(Operations):
 
     def open(self, path, flags):
         full_path = self._full_path(path)
+        print("printing full path " + full_path)
+        if not path_md5_map or not (full_path in path_md5_map):
+            self.block_level_md5(full_path)
         return os.open(full_path, flags)
 
     def create(self, path, mode, fi=None):
@@ -153,39 +160,50 @@ class Passthrough(Operations):
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
+        print("printing offset")
+        print(offset)
         print("making rest call")
         stat = self.restClientUser(path, 0, 100)
         md5 = self.findMD5(stat)
         print("md5: " + md5)
-        if (md5 is not False):
-            prefix = '/home/parallels/projects/dir_x'
-            md5FromFile = self.md5(prefix + path)
-            while (md5 != md5FromFile and md5 != 'N/A'):
+        if md5 is not False:
+            full_path = self._full_path(path)
+            md5_of_file = path_md5_map.get(full_path)
+            buf_count = 0
+            while buf_count <= offset:
+                buf_count += BLOCKSIZE
+            buf_count /= BLOCKSIZE
+            md5_from_file = md5_of_file[buf_count - 1]
+            print(md5_from_file)
+            while md5 != md5_from_file and md5 != 'N/A':
                 sleep(0.2)
-                md5FromFile = self.md5(prefix + path)
-                print('waiting: ' + md5FromFile)
-            print('md5FromFile: ' + md5FromFile)
-            print("before some r ead is happening: " + path)
+                md5_from_file = md5_of_file[buf_count - 1]
+                print('waiting: ' + md5_from_file)
+            print('md5FromFile: ' + md5_from_file)
+            print("before some read is happening: " + path)
             os.lseek(fh, offset, os.SEEK_SET)
             print("after some read is happening: " + path)
             print(md5)
-            print self.restClientUser(path, 1, md5)
+            print(self.restClientUser(path, 1, md5))
 
-            with open(prefix + path, "rb") as f:
-                f.seek(offset,os.SEEK_SET)
-                return f.read(length)
-
-            return os.read(fh, length)
+            with open(full_path, "rb") as f:
+                f.seek(offset, os.SEEK_SET)
+                return_bytes = f.read(length)
+            f.close()
+            return return_bytes
 
     def write(self, path, buf, offset, fh):
         print("some write is happening, path: " + path)
+        print("printting offset")
+        print(offset)
         stat = self.restClientUser(path, 0, 100)
         os.lseek(fh, offset, os.SEEK_SET)
         write_return = os.write(fh, buf)
         print("after the write is performed: " + path)
-        prefix = '/home/parallels/projects/dir_x'
-        md5FromFile = self.md5(prefix + path)
-        
+        prefix = '/home/alekhya/Desktop/AMS/fuse_python/dir_x'
+        full_path = self._full_path(path)
+        md5FromFile = self.block_level_md5(full_path, offset)  # set the md5 value
+
         stat = self.restClientUser(path, 1, md5FromFile)
         # /*calculate new md5*/
         # /*release the lock with new md5*/
