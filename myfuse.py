@@ -18,7 +18,7 @@ path_md5_map = {}
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
-        self.host = "127.0.0.1"
+        self.host = "10.211.55.7"
         self.port = "8080"
 
     # Helpers
@@ -150,11 +150,9 @@ class Passthrough(Operations):
 
     def open(self, path, flags):
         full_path = self._full_path(path)
-        filename = full_path.split("/")[-1]
-        filename = "/home/alekhya/Desktop/AMS/fuse_python/dir_x/" + filename
-        print("printing full path " + filename)
-        if not path_md5_map or not (filename in path_md5_map):
-            self.block_level_md5(filename)
+        print("printing full path " + full_path)
+        if not path_md5_map or not (full_path in path_md5_map):
+            self.block_level_md5(full_path)
         return os.open(full_path, flags)
 
     def create(self, path, mode, fi=None):
@@ -169,10 +167,8 @@ class Passthrough(Operations):
         md5 = self.findMD5(stat)
         print("md5: " + md5)
         if md5 is not False:
-            prefix = self._full_path(path)
-            filename = prefix.split("/")
-            file_path = "/home/alekhya/Desktop/AMS/fuse_python/dir_x/" + filename[-1]
-            md5_of_file = path_md5_map.get(file_path)
+            full_path = self._full_path(path)
+            md5_of_file = path_md5_map.get(full_path)
             buf_count = 0
             while buf_count <= offset:
                 buf_count += BLOCKSIZE
@@ -205,7 +201,8 @@ class Passthrough(Operations):
         write_return = os.write(fh, buf)
         print("after the write is performed: " + path)
         prefix = '/home/alekhya/Desktop/AMS/fuse_python/dir_x'
-        md5FromFile = self.block_level_md5(prefix + path, offset)  # set the md5 value
+        full_path = self._full_path(path)
+        md5FromFile = self.block_level_md5(full_path, offset)  # set the md5 value
 
         stat = self.restClientUser(path, 1, md5FromFile)
         # /*calculate new md5*/
