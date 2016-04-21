@@ -186,7 +186,7 @@ class Passthrough(Operations):
             print(md5)
             print(self.restClientUser(path, 1, md5))
 
-            with open(file_path, "rb") as f:
+            with open(full_path, "rb") as f:
                 f.seek(offset, os.SEEK_SET)
                 return_bytes = f.read(length)
             f.close()
