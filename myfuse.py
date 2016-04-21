@@ -10,9 +10,9 @@ import hashlib
 
 from time import sleep
 from fuse import FUSE, FuseOSError, Operations
-BLOCKSIZE=4096
-path_md5_map={}
 
+BLOCKSIZE = 4096
+path_md5_map = {}
 
 
 class Passthrough(Operations):
@@ -37,27 +37,26 @@ class Passthrough(Operations):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
 
-
-    def block_level_md5(self,fname):
-        final_md5=[]
-    	hasher = hashlib.md5()
+    def block_level_md5(self, fname):
+        final_md5 = []
+        hasher = hashlib.md5()
         with open(fname, 'rb') as afile:
             buf = afile.read(BLOCKSIZE)
-            buf1=afile.read(BLOCKSIZE)
+            buf1 = afile.read(BLOCKSIZE)
             while True:
-                buf1=buf
+                buf1 = buf
                 buf = afile.read(BLOCKSIZE)
                 hasher.update(buf1)
-                md5=hasher.hexdigest()
+                md5 = hasher.hexdigest()
                 final_md5.append(md5)
-                if(len(buf) ==0):
+                if (len(buf) == 0):
                     break;
         afile.close()
-        path_md5_map.update({fname:final_md5})
+        path_md5_map.update({fname: final_md5})
 
     def restClientUser(self, path, num, md5):
         if (num == 0):
-            str = "http://"+self.host+":"+self.port+"/lock?userId=1&resourcePath=abcde&lockType=WRITE"
+            str = "http://" + self.host + ":" + self.port + "/lock?userId=1&resourcePath=abcde&lockType=WRITE"
             print str
             res = urllib.urlopen(str).read()
             print res;
@@ -65,7 +64,7 @@ class Passthrough(Operations):
 
         else:
             res = urllib.urlopen(
-                "http://"+self.host+":"+self.port+"/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
+                "http://" + self.host + ":" + self.port + "/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
             # print(md5('asdf.txt'))
 
         return res
@@ -151,10 +150,10 @@ class Passthrough(Operations):
 
     def open(self, path, flags):
         full_path = self._full_path(path)
-        filename=full_path.split("/")[-1]
-        filename="/home/alekhya/Desktop/AMS/fuse_python/dir_x/"+filename
-        print("printing full path "+filename)
-        if( not(path_md5_map) or not(filename in path_md5_map)):
+        filename = full_path.split("/")[-1]
+        filename = "/home/alekhya/Desktop/AMS/fuse_python/dir_x/" + filename
+        print("printing full path " + filename)
+        if (not (path_md5_map) or not (filename in path_md5_map)):
             self.block_level_md5(filename)
         return os.open(full_path, flags)
 
@@ -163,26 +162,26 @@ class Passthrough(Operations):
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
-    	print("printing offset" )
-    	print(offset)
+        print("printing offset")
+        print(offset)
         print("making rest call")
         stat = self.restClientUser(path, 0, 100)
         md5 = self.findMD5(stat)
         print("md5: " + md5)
         if (md5 is not False):
             prefix = self._full_path(path)
-            filename=prefix.split("/")
-            file="/home/alekhya/Desktop/AMS/fuse_python/dir_x/"+filename[-1]
+            filename = prefix.split("/")
+            file = "/home/alekhya/Desktop/AMS/fuse_python/dir_x/" + filename[-1]
             md5OfFile = path_md5_map.get(file)
-            buf_count=0;
-            while(buf_count <=offset):
-                buf_count=buf_count+BLOCKSIZE
-            buf_count=buf_count/BLOCKSIZE
-            md5FromFile=md5OfFile[buf_count-1]
+            buf_count = 0;
+            while (buf_count <= offset):
+                buf_count = buf_count + BLOCKSIZE
+            buf_count = buf_count / BLOCKSIZE
+            md5FromFile = md5OfFile[buf_count - 1]
             print (md5FromFile)
             while (md5 != md5FromFile and md5 != 'N/A'):
                 sleep(0.2)
-                md5FromFile=md5OfFile[buf_count-1]
+                md5FromFile = md5OfFile[buf_count - 1]
                 print('waiting: ' + md5FromFile)
             print('md5FromFile: ' + md5FromFile)
             print("before some read is happening: " + path)
@@ -192,7 +191,7 @@ class Passthrough(Operations):
             print self.restClientUser(path, 1, md5)
 
             with open(file, "rb") as f:
-                f.seek(offset,os.SEEK_SET)
+                f.seek(offset, os.SEEK_SET)
                 return f.read(length)
             f.close();
 
@@ -207,7 +206,7 @@ class Passthrough(Operations):
         write_return = os.write(fh, buf)
         print("after the write is performed: " + path)
         prefix = '/home/alekhya/Desktop/AMS/fuse_python/dir_x'
-        md5FromFile = self.block_level_md5(prefix + path,offset) #set the md5 value
+        md5FromFile = self.block_level_md5(prefix + path, offset)  # set the md5 value
 
         stat = self.restClientUser(path, 1, md5FromFile)
         # /*calculate new md5*/
