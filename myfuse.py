@@ -11,7 +11,7 @@ import hashlib
 from time import sleep
 from fuse import FUSE, FuseOSError, Operations
 
-BLOCKSIZE = 4096
+BLOCKSIZE = 1000
 path_md5_map = {}
 
 
@@ -45,10 +45,10 @@ class Passthrough(Operations):
             buf1 = afile.read(BLOCKSIZE)
             while True:
                 buf1 = buf
-                buf = afile.read(BLOCKSIZE)
-                hasher.update(buf1)
+                buf = afile.read(BLOCKSIZE) # buf is a lookahead
+                hasher.update(buf1) # buf1 is the current buffer
                 md5 = hasher.hexdigest()
-                final_md5.append(md5)
+                final_md5.append(md5) # we need a way to retrieve these by file and offset
                 if (len(buf) == 0):
                     break
         afile.close()
@@ -72,7 +72,14 @@ class Passthrough(Operations):
         resource_path = "abcde"
         lock_type = "WRITE"
 
-        url = self.build_url(lock_type,operation,resource_path,user_id,md5)
+        url = self.build_url({
+            'lock_type': lock_type,
+            'operation': operation,
+            'resource_path': resource_path,
+            'user_id': user_id,
+            'md5': md5
+        })
+
         return urllib.urlopen(url).read()
 
     def perform_lock(self):
@@ -80,21 +87,28 @@ class Passthrough(Operations):
         user_id = "1"
         resource_path = "abcde"
         lock_type = "WRITE"
-        url = self.build_url(lock_type, operation, resource_path, user_id)
+
+        url = self.build_url({
+            'lock_type': lock_type,
+            'operation': operation,
+            'resource_path': resource_path,
+            'user_id': user_id
+        })
+
         res = urllib.urlopen(url).read()
         return res
 
-    def build_url(self, lock_type, operation, resource_path, user_id, md5):
+    def build_url(self, parameters):
         url = "http://" \
               + self.host + ":" \
               + self.port + "/" \
-              + operation \
-              + "?userId=" + user_id \
-              + "&resourcePath=" + resource_path \
-              + "&lockType=" + lock_type
+              + parameters['operation'] \
+              + "?userId=" + parameters['user_id'] \
+              + "&resourcePath=" + parameters['resource_path'] \
+              + "&lockType=" + parameters['lock_type']
 
-        if md5:
-            url += "&md5=" + md5
+        if 'md5' in parameters:
+            url += "&md5=" + parameters['md5']
         return url
 
     def findMD5(self, string):
