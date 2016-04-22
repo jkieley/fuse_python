@@ -54,20 +54,48 @@ class Passthrough(Operations):
         afile.close()
         path_md5_map.update({fname: final_md5})
 
+    def block_level_md5_by_offset(self, full_path, offset):
+        pass
+
     def restClientUser(self, path, num, md5):
         if (num == 0):
-            str = "http://" + self.host + ":" + self.port + "/lock?userId=1&resourcePath=abcde&lockType=WRITE"
-            print(str)
-            res = urllib.urlopen(str).read()
-            print(res)
-            # print(md5('asdf.txt'))
+            res = self.perform_lock()
 
         else:
-            res = urllib.urlopen(
-                "http://" + self.host + ":" + self.port + "/unlock?userId=1&resourcePath=abcde&lockType=WRITE&md5=" + md5).read()
-            # print(md5('asdf.txt'))
+            res = self.perform_unlock(md5)
 
         return res
+
+    def perform_unlock(self, md5):
+        operation = "unlock"
+        user_id = "1"
+        resource_path = "abcde"
+        lock_type = "WRITE"
+
+        url = self.build_url(lock_type,operation,resource_path,user_id,md5)
+        return urllib.urlopen(url).read()
+
+    def perform_lock(self):
+        operation = "lock"
+        user_id = "1"
+        resource_path = "abcde"
+        lock_type = "WRITE"
+        url = self.build_url(lock_type, operation, resource_path, user_id)
+        res = urllib.urlopen(url).read()
+        return res
+
+    def build_url(self, lock_type, operation, resource_path, user_id, md5):
+        url = "http://" \
+              + self.host + ":" \
+              + self.port + "/" \
+              + operation \
+              + "?userId=" + user_id \
+              + "&resourcePath=" + resource_path \
+              + "&lockType=" + lock_type
+
+        if md5:
+            url += "&md5=" + md5
+        return url
 
     def findMD5(self, string):
         return string.replace('{', '').replace('}', '').split(',')[3].split(':')[1].replace('"', '').replace(' ', '')
@@ -163,7 +191,7 @@ class Passthrough(Operations):
         print("printing offset")
         print(offset)
         print("making rest call")
-        stat = self.restClientUser(path, 0, 100)
+        stat = self.perform_lock()
         md5 = self.findMD5(stat)
         print("md5: " + md5)
         if md5 is not False:
@@ -184,7 +212,7 @@ class Passthrough(Operations):
             os.lseek(fh, offset, os.SEEK_SET)
             print("after some read is happening: " + path)
             print(md5)
-            print(self.restClientUser(path, 1, md5))
+            print(self.perform_unlock(md5))
 
             with open(full_path, "rb") as f:
                 f.seek(offset, os.SEEK_SET)
@@ -196,15 +224,14 @@ class Passthrough(Operations):
         print("some write is happening, path: " + path)
         print("printting offset")
         print(offset)
-        stat = self.restClientUser(path, 0, 100)
+        stat = self.perform_lock()
         os.lseek(fh, offset, os.SEEK_SET)
         write_return = os.write(fh, buf)
         print("after the write is performed: " + path)
-        prefix = '/home/alekhya/Desktop/AMS/fuse_python/dir_x'
         full_path = self._full_path(path)
-        md5FromFile = self.block_level_md5(full_path, offset)  # set the md5 value
+        md5FromFile = self.block_level_md5_by_offset(full_path, offset)  # set the md5 value
 
-        stat = self.restClientUser(path, 1, md5FromFile)
+        stat = self.perform_unlock(md5FromFile)
         # /*calculate new md5*/
         # /*release the lock with new md5*/
         return write_return
