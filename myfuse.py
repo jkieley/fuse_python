@@ -55,7 +55,21 @@ class Passthrough(Operations):
         path_md5_map.update({fname: final_md5})
 
     def block_level_md5_by_offset(self, full_path, offset):
-        pass
+
+        file = open(full_path,'rb')
+        file.seek(offset)
+        bytes = file.read(BLOCKSIZE)
+        file.close()
+
+        md5 = self.md5_from_bytes(bytes)
+
+        return md5
+
+    def md5_from_bytes(self, bytes):
+        hasher = hashlib.md5()
+        hasher.update(bytes)
+        md5 = hasher.hexdigest()
+        return md5
 
     def restClientUser(self, path, num, md5):
         if (num == 0):
@@ -245,7 +259,7 @@ class Passthrough(Operations):
         full_path = self._full_path(path)
         md5FromFile = self.block_level_md5_by_offset(full_path, offset)  # set the md5 value
 
-        stat = self.perform_unlock(md5FromFile)
+        stat = self.perform_unlock(md5FromFile) # md5from file is none here causing issues with concatinating string
         # /*calculate new md5*/
         # /*release the lock with new md5*/
         return write_return
