@@ -300,7 +300,8 @@ class Passthrough(Operations):
         # os.lseek(fh, offset, os.SEEK_SET)
         # write_return = os.write(fh, buf)
 
-        file_descriptor = os.open(full_path,'w')
+        write_flags = 33793
+        file_descriptor = os.open(full_path, write_flags)
         os.lseek(file_descriptor,offset,os.SEEK_SET)
         os.write(file_descriptor,buf)
         os.close(file_descriptor)
