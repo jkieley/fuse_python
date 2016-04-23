@@ -285,8 +285,6 @@ class Passthrough(Operations):
         print("after the write is performed: " + path)
         full_path = self._full_path(path)
 
-        # it doesn't look like this is picking up the written bytes to account for the new md5
-        # how can we have this read the block that was just written too?
         block_offset = self.get_block_offset(offset)
         md5FromFile = self.block_level_md5_by_offset(full_path, block_offset)  # set the md5 value
 
