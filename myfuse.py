@@ -246,8 +246,8 @@ class Passthrough(Operations):
             md5_from_file = self.wait_white_md5_does_not_match(full_path, md5_from_file, md5_from_server, offset)
         else:
             if md5_from_file != md5_from_server and md5_from_server != 'N/A':
-                message = "The file: \n{0}\nIs currently being edited by another user\n editing this file could cause conflicts"
-                self.send_message(message.format(path))
+                message = "The file: \n"+path+"\nIs currently being edited by another user\n editing this file could cause conflicts"
+                self.send_message(message)
         print('md5FromFile: ' + md5_from_file)
         print("before some read is happening: " + path)
         os.lseek(fh, offset, os.SEEK_SET)
@@ -325,7 +325,7 @@ class Passthrough(Operations):
         block_offset = block_index * BLOCKSIZE
         return int(block_offset)
 
-    def send_message(message):
+    def send_message(self,message):
         subprocess.Popen(['notify-send', message])
         return
 
