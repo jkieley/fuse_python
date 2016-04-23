@@ -10,6 +10,8 @@ import hashlib
 import json
 
 from time import sleep
+
+import math
 from fuse import FUSE, FuseOSError, Operations
 
 BLOCKSIZE = 4096
@@ -241,7 +243,6 @@ class Passthrough(Operations):
         while md5_from_server != md5_from_file and md5_from_server != 'N/A':
             sleep(0.2)
             md5_from_file = self.block_level_md5_by_offset(full_path, offset)
-            break
             print('waiting: ' + md5_from_file)
         print('md5FromFile: ' + md5_from_file)
         print("before some read is happening: " + path)
@@ -278,12 +279,16 @@ class Passthrough(Operations):
         stat = self.perform_lock()
         os.lseek(fh, offset, os.SEEK_SET)
         write_return = os.write(fh, buf)
+
+        # os.lseek(fh, offset, os.SEEK_SET)
+        # bye = os.read(fh,BLOCKSIZE)
         print("after the write is performed: " + path)
         full_path = self._full_path(path)
 
         # it doesn't look like this is picking up the written bytes to account for the new md5
         # how can we have this read the block that was just written too?
-        md5FromFile = self.block_level_md5_by_offset(full_path, offset)  # set the md5 value
+        block_offset = self.get_block_offset(offset)
+        md5FromFile = self.block_level_md5_by_offset(full_path, block_offset)  # set the md5 value
 
         stat['md5'] = md5FromFile
 
@@ -305,6 +310,11 @@ class Passthrough(Operations):
 
     def fsync(self, path, fdatasync, fh):
         return self.flush(path, fh)
+
+    def get_block_offset(self, offset):
+        block_index = math.floor(offset/BLOCKSIZE)
+        block_offset = block_index * BLOCKSIZE
+        return int(block_offset)
 
 
 def main(mountpoint, root):
