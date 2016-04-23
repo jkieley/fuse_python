@@ -25,7 +25,7 @@ class Passthrough(Operations):
         self.root = root
         self.host = "10.211.55.7"
         self.port = "8080"
-        self.use_lock = False
+        self.use_lock = True
 
     # Helpers
     # =======
@@ -288,6 +288,14 @@ class Passthrough(Operations):
         print("printting offset")
         print(offset)
         stat = self.perform_lock()
+        full_path = self._full_path(path)
+        md5_from_server = self.findMD5(stat)
+        block_offset = self.get_block_offset(offset)
+        md5_from_file = self.get_md5_from_file_by_offset(full_path, block_offset)
+
+        if self.use_lock:
+            self.wait_white_md5_does_not_match(full_path, md5_from_file, md5_from_server, block_offset)
+
         os.lseek(fh, offset, os.SEEK_SET)
         write_return = os.write(fh, buf)
 
