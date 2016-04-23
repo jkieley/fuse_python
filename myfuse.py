@@ -296,8 +296,14 @@ class Passthrough(Operations):
         if self.use_lock:
             self.wait_white_md5_does_not_match(full_path, md5_from_file, md5_from_server, block_offset)
 
-        os.lseek(fh, offset, os.SEEK_SET)
-        write_return = os.write(fh, buf)
+
+        # os.lseek(fh, offset, os.SEEK_SET)
+        # write_return = os.write(fh, buf)
+
+        file_descriptor = os.open(full_path,'w')
+        os.lseek(file_descriptor,offset,os.SEEK_SET)
+        os.write(file_descriptor,buf)
+        os.close(file_descriptor)
 
         # os.lseek(fh, offset, os.SEEK_SET)
         # bye = os.read(fh,BLOCKSIZE)
