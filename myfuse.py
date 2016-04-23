@@ -303,7 +303,7 @@ class Passthrough(Operations):
         write_flags = 33793
         file_descriptor = os.open(full_path, write_flags)
         os.lseek(file_descriptor,offset,os.SEEK_SET)
-        os.write(file_descriptor,buf)
+        write_return = os.write(file_descriptor,buf)
         os.close(file_descriptor)
 
         # os.lseek(fh, offset, os.SEEK_SET)
