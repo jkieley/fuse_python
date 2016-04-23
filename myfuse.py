@@ -12,6 +12,8 @@ import json
 from time import sleep
 
 import math
+
+import subprocess
 from fuse import FUSE, FuseOSError, Operations
 
 BLOCKSIZE = 4096
@@ -240,10 +242,12 @@ class Passthrough(Operations):
         full_path = self._full_path(path)
         md5_from_file = self.get_md5_from_file_by_offset(full_path, offset)
         print(md5_from_file)
-        while md5_from_server != md5_from_file and md5_from_server != 'N/A':
-            sleep(0.2)
-            md5_from_file = self.block_level_md5_by_offset(full_path, offset)
-            print('waiting: ' + md5_from_file)
+        if self.use_lock:
+            md5_from_file = self.wait_white_md5_does_not_match(full_path, md5_from_file, md5_from_server, offset)
+        else:
+            if md5_from_file != md5_from_server and md5_from_server != 'N/A':
+                message = "The file: \n{0}\nIs currently being edited by another user\n editing this file could cause conflicts"
+                self.send_message(message.format(path))
         print('md5FromFile: ' + md5_from_file)
         print("before some read is happening: " + path)
         os.lseek(fh, offset, os.SEEK_SET)
@@ -262,6 +266,13 @@ class Passthrough(Operations):
             return_bytes = f.read(length)
         f.close()
         return return_bytes
+
+    def wait_white_md5_does_not_match(self, full_path, md5_from_file, md5_from_server, offset):
+        while md5_from_server != md5_from_file and md5_from_server != 'N/A':
+            sleep(0.2)
+            md5_from_file = self.block_level_md5_by_offset(full_path, offset)
+            print('waiting: ' + md5_from_file)
+        return md5_from_file
 
     def get_md5_from_file_by_offset(self, full_path, offset):
         md5_of_file = path_md5_map.get(full_path)
@@ -313,6 +324,10 @@ class Passthrough(Operations):
         block_index = math.floor(offset/BLOCKSIZE)
         block_offset = block_index * BLOCKSIZE
         return int(block_offset)
+
+    def send_message(message):
+        subprocess.Popen(['notify-send', message])
+        return
 
 
 def main(mountpoint, root):
