@@ -12,9 +12,8 @@ import json
 from time import sleep
 from fuse import FUSE, FuseOSError, Operations
 
-BLOCKSIZE = 1000
+BLOCKSIZE = 4096
 path_md5_map = {}
-
 
 
 class Passthrough(Operations):
@@ -58,12 +57,17 @@ class Passthrough(Operations):
         path_md5_map.update({fname: final_md5})
 
     def block_level_md5_by_offset(self, full_path, offset):
-        file = open(full_path,'rb')
+        file = open(full_path, 'rb')
         file.seek(offset)
         bytes = file.read(BLOCKSIZE)
         file.close()
 
         md5 = self.md5_from_bytes(bytes)
+
+        print("bytes")
+        print(bytes)
+        print("md5")
+        print(md5)
 
         return md5
 
@@ -73,15 +77,7 @@ class Passthrough(Operations):
         md5 = hasher.hexdigest()
         return md5
 
-    def restClientUser(self, path, num, md5):
-        if (num == 0):
-            res = self.perform_lock()
-        else:
-            res = self.perform_unlock(md5)
-        return res
-
-    def perform_unlock(self, stat):
-        lock_json = json.loads(stat)
+    def perform_unlock(self, lock_json):
         md5 = lock_json['md5']
         operation = "unlock" if self.use_lock else 'unlease'
         user_id = "1"
@@ -99,12 +95,12 @@ class Passthrough(Operations):
         if not self.use_lock:
             params['leaseKey'] = lock_json['leaseKey']
 
-
         url = self.build_url(params)
 
         print(url)
-
-        return urllib.urlopen(url).read()
+        response = urllib.urlopen(url).read()
+        json_dictionary = json.loads(response)
+        return json_dictionary
 
     def perform_lock(self):
         operation = "lock" if self.use_lock else 'lease'
@@ -121,8 +117,9 @@ class Passthrough(Operations):
 
         print(url)
 
-        res = urllib.urlopen(url).read()
-        return res
+        response = urllib.urlopen(url).read()
+        json_dictionary = json.loads(response)
+        return json_dictionary
 
     def build_url(self, parameters):
         url = "http://" \
@@ -141,8 +138,8 @@ class Passthrough(Operations):
 
         return url
 
-    def findMD5(self, string):
-        return json.loads(string)['md5']
+    def findMD5(self, json_dictionary):
+        return json_dictionary['md5']
 
     # Filesystem methods
     # ==================
@@ -236,33 +233,43 @@ class Passthrough(Operations):
         print(offset)
         print("making rest call")
         stat = self.perform_lock()
-        md5 = self.findMD5(stat)
-        print("md5: " + md5)
-        if md5 is not False:
-            full_path = self._full_path(path)
-            md5_of_file = path_md5_map.get(full_path)
-            buf_count = 0
-            while buf_count <= offset:
-                buf_count += BLOCKSIZE
-            buf_count /= BLOCKSIZE
-            md5_from_file = md5_of_file[buf_count - 1]
-            print(md5_from_file)
-            while md5 != md5_from_file and md5 != 'N/A':
-                sleep(0.2)
-                md5_from_file = md5_of_file[buf_count - 1]
-                print('waiting: ' + md5_from_file)
-            print('md5FromFile: ' + md5_from_file)
-            print("before some read is happening: " + path)
-            os.lseek(fh, offset, os.SEEK_SET)
-            print("after some read is happening: " + path)
-            print(md5)
-            print(self.perform_unlock(stat))
+        md5_from_server = self.findMD5(stat)
+        print("md5: " + md5_from_server)
+        full_path = self._full_path(path)
+        md5_from_file = self.get_md5_from_file_by_offset(full_path, offset)
+        print(md5_from_file)
+        while md5_from_server != md5_from_file and md5_from_server != 'N/A':
+            sleep(0.2)
+            md5_from_file = self.block_level_md5_by_offset(full_path, offset)
+            break
+            print('waiting: ' + md5_from_file)
+        print('md5FromFile: ' + md5_from_file)
+        print("before some read is happening: " + path)
+        os.lseek(fh, offset, os.SEEK_SET)
+        print("after some read is happening: " + path)
+        print(md5_from_server)
 
-            with open(full_path, "rb") as f:
-                f.seek(offset, os.SEEK_SET)
-                return_bytes = f.read(length)
-            f.close()
-            return return_bytes
+        # remove md5 so it is not reset, this is a read operation,
+        # rest server will not set to empty string
+        stat['md5'] = ''
+
+        unlock_result = self.perform_unlock(stat)
+        print(unlock_result)
+
+        with open(full_path, "rb") as f:
+            f.seek(offset, os.SEEK_SET)
+            return_bytes = f.read(length)
+        f.close()
+        return return_bytes
+
+    def get_md5_from_file_by_offset(self, full_path, offset):
+        md5_of_file = path_md5_map.get(full_path)
+        buf_count = 0
+        while buf_count <= offset:
+            buf_count += BLOCKSIZE
+        buf_count /= BLOCKSIZE
+        md5_from_file = md5_of_file[buf_count - 1]
+        return md5_from_file
 
     def write(self, path, buf, offset, fh):
         print("some write is happening, path: " + path)
@@ -273,9 +280,14 @@ class Passthrough(Operations):
         write_return = os.write(fh, buf)
         print("after the write is performed: " + path)
         full_path = self._full_path(path)
+
+        # it doesn't look like this is picking up the written bytes to account for the new md5
+        # how can we have this read the block that was just written too?
         md5FromFile = self.block_level_md5_by_offset(full_path, offset)  # set the md5 value
 
-        stat = self.perform_unlock(stat) # md5from file is none here causing issues with concatinating string
+        stat['md5'] = md5FromFile
+
+        stat = self.perform_unlock(stat)  # md5from file is none here causing issues with concatinating string
         # /*calculate new md5*/
         # /*release the lock with new md5*/
         return write_return
