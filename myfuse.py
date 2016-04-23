@@ -7,6 +7,7 @@ import sys
 import errno
 import urllib
 import hashlib
+import json
 
 from time import sleep
 from fuse import FUSE, FuseOSError, Operations
@@ -15,11 +16,13 @@ BLOCKSIZE = 1000
 path_md5_map = {}
 
 
+
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
         self.host = "10.211.55.7"
         self.port = "8080"
+        self.use_lock = False
 
     # Helpers
     # =======
@@ -45,17 +48,16 @@ class Passthrough(Operations):
             buf1 = afile.read(BLOCKSIZE)
             while True:
                 buf1 = buf
-                buf = afile.read(BLOCKSIZE) # buf is a lookahead
-                hasher.update(buf1) # buf1 is the current buffer
+                buf = afile.read(BLOCKSIZE)  # buf is a lookahead
+                hasher.update(buf1)  # buf1 is the current buffer
                 md5 = hasher.hexdigest()
-                final_md5.append(md5) # we need a way to retrieve these by file and offset
+                final_md5.append(md5)  # we need a way to retrieve these by file and offset
                 if (len(buf) == 0):
                     break
         afile.close()
         path_md5_map.update({fname: final_md5})
 
     def block_level_md5_by_offset(self, full_path, offset):
-
         file = open(full_path,'rb')
         file.seek(offset)
         bytes = file.read(BLOCKSIZE)
@@ -74,30 +76,38 @@ class Passthrough(Operations):
     def restClientUser(self, path, num, md5):
         if (num == 0):
             res = self.perform_lock()
-
         else:
             res = self.perform_unlock(md5)
-
         return res
 
-    def perform_unlock(self, md5):
-        operation = "unlock"
+    def perform_unlock(self, stat):
+        lock_json = json.loads(stat)
+        md5 = lock_json['md5']
+        operation = "unlock" if self.use_lock else 'unlease'
         user_id = "1"
         resource_path = "abcde"
         lock_type = "WRITE"
 
-        url = self.build_url({
+        params = {
             'lock_type': lock_type,
             'operation': operation,
             'resource_path': resource_path,
             'user_id': user_id,
             'md5': md5
-        })
+        }
+
+        if not self.use_lock:
+            params['leaseKey'] = lock_json['leaseKey']
+
+
+        url = self.build_url(params)
+
+        print(url)
 
         return urllib.urlopen(url).read()
 
     def perform_lock(self):
-        operation = "lock"
+        operation = "lock" if self.use_lock else 'lease'
         user_id = "1"
         resource_path = "abcde"
         lock_type = "WRITE"
@@ -108,6 +118,8 @@ class Passthrough(Operations):
             'resource_path': resource_path,
             'user_id': user_id
         })
+
+        print(url)
 
         res = urllib.urlopen(url).read()
         return res
@@ -123,10 +135,14 @@ class Passthrough(Operations):
 
         if 'md5' in parameters:
             url += "&md5=" + parameters['md5']
+
+        if 'leaseKey' in parameters:
+            url += "&leaseKey=" + parameters['leaseKey']
+
         return url
 
     def findMD5(self, string):
-        return string.replace('{', '').replace('}', '').split(',')[3].split(':')[1].replace('"', '').replace(' ', '')
+        return json.loads(string)['md5']
 
     # Filesystem methods
     # ==================
@@ -240,7 +256,7 @@ class Passthrough(Operations):
             os.lseek(fh, offset, os.SEEK_SET)
             print("after some read is happening: " + path)
             print(md5)
-            print(self.perform_unlock(md5))
+            print(self.perform_unlock(stat))
 
             with open(full_path, "rb") as f:
                 f.seek(offset, os.SEEK_SET)
@@ -259,7 +275,7 @@ class Passthrough(Operations):
         full_path = self._full_path(path)
         md5FromFile = self.block_level_md5_by_offset(full_path, offset)  # set the md5 value
 
-        stat = self.perform_unlock(md5FromFile) # md5from file is none here causing issues with concatinating string
+        stat = self.perform_unlock(stat) # md5from file is none here causing issues with concatinating string
         # /*calculate new md5*/
         # /*release the lock with new md5*/
         return write_return
