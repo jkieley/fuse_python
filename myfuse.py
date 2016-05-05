@@ -135,7 +135,7 @@ class Passthrough(Operations):
               + "?userId=" + parameters['user_id'] \
               + "&resourcePath=" + parameters['resource_path'] \
               + "&lockType=" + parameters['lock_type'] \
-              + "&blockIndex=" + parameters['block_index']
+              + "&blockIndex=" + str(int(parameters['block_index']))
 
         if 'md5' in parameters:
             url += "&md5=" + parameters['md5']
