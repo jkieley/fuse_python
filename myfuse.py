@@ -280,11 +280,8 @@ class Passthrough(Operations):
 
     def get_md5_from_file_by_offset(self, full_path, offset):
         md5_of_file = path_md5_map.get(full_path)
-        buf_count = 0
-        while buf_count <= offset:
-            buf_count += BLOCKSIZE
-        buf_count /= BLOCKSIZE
-        md5_from_file = md5_of_file[buf_count - 1]
+        block_index = int(self.get_block_index(offset))
+        md5_from_file = md5_of_file[block_index - 1]
         return md5_from_file
 
     def write(self, path, buf, offset, fh):
