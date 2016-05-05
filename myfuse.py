@@ -81,11 +81,11 @@ class Passthrough(Operations):
         md5 = hasher.hexdigest()
         return md5
 
-    def perform_unlock(self, lock_json):
+    def perform_unlock(self, lock_json, path, block_index):
         md5 = lock_json['md5']
         operation = "unlock" if self.use_lock else 'unlease'
         user_id = "1"
-        resource_path = "abcde"
+        resource_path = path
         lock_type = "WRITE"
 
         params = {
@@ -93,7 +93,8 @@ class Passthrough(Operations):
             'operation': operation,
             'resource_path': resource_path,
             'user_id': user_id,
-            'md5': md5
+            'md5': md5,
+            'block_index': block_index
         }
 
         if not self.use_lock:
@@ -106,17 +107,18 @@ class Passthrough(Operations):
         json_dictionary = json.loads(response)
         return json_dictionary
 
-    def perform_lock(self):
+    def perform_lock(self, path, block_index):
         operation = "lock" if self.use_lock else 'lease'
         user_id = "1"
-        resource_path = "abcde"
+        resource_path = path
         lock_type = "WRITE"
 
         url = self.build_url({
             'lock_type': lock_type,
             'operation': operation,
             'resource_path': resource_path,
-            'user_id': user_id
+            'user_id': user_id,
+            'block_index': block_index
         })
 
         print(url)
@@ -132,7 +134,8 @@ class Passthrough(Operations):
               + parameters['operation'] \
               + "?userId=" + parameters['user_id'] \
               + "&resourcePath=" + parameters['resource_path'] \
-              + "&lockType=" + parameters['lock_type']
+              + "&lockType=" + parameters['lock_type'] \
+              + "&blockIndex=" + parameters['block_index']
 
         if 'md5' in parameters:
             url += "&md5=" + parameters['md5']
@@ -236,7 +239,8 @@ class Passthrough(Operations):
         print("printing offset")
         print(offset)
         print("making rest call")
-        stat = self.perform_lock()
+        block_index = self.get_block_index(offset)
+        stat = self.perform_lock(path, block_index)
         md5_from_server = self.findMD5(stat)
         print("md5: " + md5_from_server)
         full_path = self._full_path(path)
@@ -258,7 +262,7 @@ class Passthrough(Operations):
         # rest server will not set to empty string
         stat['md5'] = ''
 
-        unlock_result = self.perform_unlock(stat)
+        unlock_result = self.perform_unlock(stat,path,block_index)
         print(unlock_result)
 
         with open(full_path, "rb") as f:
@@ -336,9 +340,13 @@ class Passthrough(Operations):
         return self.flush(path, fh)
 
     def get_block_offset(self, offset):
-        block_index = math.floor(offset/BLOCKSIZE)
+        block_index = self.get_block_index(offset)
         block_offset = block_index * BLOCKSIZE
         return int(block_offset)
+
+    def get_block_index(self, offset):
+        block_index = math.floor(offset / BLOCKSIZE)
+        return block_index
 
     def send_message(self,message):
         subprocess.Popen(['notify-send', message])
