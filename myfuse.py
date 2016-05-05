@@ -242,10 +242,10 @@ class Passthrough(Operations):
         block_index = self.get_block_index(offset)
         stat = self.perform_lock(path, block_index)
         md5_from_server = self.findMD5(stat)
-        print("md5: " + md5_from_server)
+        print("md5_from_server: " + md5_from_server)
         full_path = self._full_path(path)
         md5_from_file = self.get_md5_from_file_by_offset(full_path, offset)
-        print(md5_from_file)
+        print("md5_from_file" + md5_from_file)
         if self.use_lock:
             md5_from_file = self.wait_white_md5_does_not_match(full_path, md5_from_file, md5_from_server, offset)
         else:
@@ -262,7 +262,7 @@ class Passthrough(Operations):
         # rest server will not set to empty string
         stat['md5'] = ''
 
-        unlock_result = self.perform_unlock(stat,path,block_index)
+        unlock_result = self.perform_unlock(stat, path, block_index)
         print(unlock_result)
 
         with open(full_path, "rb") as f:
