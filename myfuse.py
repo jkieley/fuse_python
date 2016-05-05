@@ -321,7 +321,7 @@ class Passthrough(Operations):
 
         stat['md5'] = md5FromFile
 
-        stat = self.perform_unlock(stat)  # md5from file is none here causing issues with concatinating string
+        stat = self.perform_unlock(stat, path, block_index)  # md5from file is none here causing issues with concatinating string
         # /*calculate new md5*/
         # /*release the lock with new md5*/
         return write_return
